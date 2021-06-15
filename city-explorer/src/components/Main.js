@@ -13,8 +13,10 @@ export class Main extends React.Component {
       cityExplorer: '',
       cityInformation: {},
       displayInformation: false,
-      error: '',
-      alert: false
+      error: false,
+      show: true, 
+      weatherData: []
+
     }
   };
 
@@ -29,16 +31,20 @@ export class Main extends React.Component {
     event.preventDefault();
     try {
       const axiosResponse = await axios.get(`https://us1.locationiq.com/v1/search.php?key=pk.7c29bd71f87227f27ebcd9f2dbd2a2db&city=${this.state.cityExplorer}&format=json`);
+      const ApiKey = await axios.get(`${process.env.REACT_APP_URL}/weather`)
       console.log(axiosResponse);
       this.setState({
         cityInformation: axiosResponse.data[0],
         displayInformation: true,
-        alert: false
+        error: false,
+        show:true,
+        weatherData: ApiKey.data
       });
-    } catch (error) {
+      console.log(this.state.weatherData);
+    } catch (show) {
       this.setState({
-        error: error.message,
-        alert: true
+        show: false,
+        error: true
       });
     } 
   }
@@ -50,12 +56,6 @@ export class Main extends React.Component {
 
         <div>
 
-{this.state.alert &&
-
-<div class="alert alert-warning" role="alert">
-Warning : Wrong Input
-</div>
-}
 
           <Form onSubmit={this.getCityInformation}>
 
@@ -80,7 +80,24 @@ Warning : Wrong Input
 
               <img src={`https://maps.locationiq.com/v3/staticmap?key=pk.7c29bd71f87227f27ebcd9f2dbd2a2db&q&center=${this.state.cityInformation.lat},${this.state.cityInformation.lon}&zoom = 15`} alt='' />
             }
+                {this.state.error &&
+                <p>error</p>}
+                {this.state.show &&
+                
+                    this.state.weatherData.map((value, index) => (
+                       <div key={index}>
+                             <p>discription:{value.description}</p>
 
+                             <p> Date:{value.date} </p>
+                           
+                            
+
+                            
+                            </div>
+                    ))
+                }
+                
+                
           </Form>
 
         </div>
@@ -90,4 +107,3 @@ Warning : Wrong Input
   }
 
   export default Main;
-
