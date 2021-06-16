@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/alt-text */
 import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
@@ -12,98 +13,136 @@ export class Main extends React.Component {
     this.state = {
       cityExplorer: '',
       cityInformation: {},
+      weatherData: '',
+      movies: '',
       displayInformation: false,
-      error: false,
-      show: true, 
-      weatherData: []
-
+      show: false,
+      /* lat: '',
+      lon: '', */
+      showmovies:false
     }
   };
 
-  changeCityExplorer = (event) => {
+  changecityExplorer = (event) => {
     this.setState({
       cityExplorer: event.target.value
     });
   }
 
-
-  getCityInformation = async (event) => {
+  getcityInformation = async (event) => {
     event.preventDefault();
-    try {
-      const axiosResponse = await axios.get(`https://us1.locationiq.com/v1/search.php?key=pk.7c29bd71f87227f27ebcd9f2dbd2a2db&city=${this.state.cityExplorer}&format=json`);
-      const ApiKey = await axios.get(`${process.env.REACT_APP_URL}/weather`)
-      console.log(axiosResponse);
+    await axios.get(`https://us1.locationiq.com/v1/search.php?key=pk.bd985e4e701a5b53341ec9e721b6098a
+        &city=${this.state.cityExplorer}&format=json`).then(locationResponse => {
       this.setState({
-        cityInformation: axiosResponse.data[0],
-        displayInformation: true,
-        error: false,
-        show:true,
-        weatherData: ApiKey.data
+        cityInformation: locationResponse.data[0],
+        lat: locationResponse.data[0].lat,
+        lon: locationResponse.data[0].lon,
       });
-      console.log(this.state.weatherData);
-    } catch (show) {
-      this.setState({
-        show: false,
-        error: true
+
+      axios.get(`${process.env.REACT_APP_URL}/weather?lat=${this.state.lat}&lon=${this.state.lon}`).then(weatherResponse => {
+        this.setState({
+
+          weatherData: weatherResponse.data,
+          displayInformation: true,
+          show: true
+        })
+
       });
-    } 
+      axios.get(`${process.env.REACT_APP_URL}/movies?query=${this.state.cityExplorer}`).then(response => {
+        this.setState({
+          movies: response.data,
+          showmovies: true
+        });
+      })
+      // .catch(error => {
+      //   this.setState({
+      //     showError: true,
+      //     errorMessage: error.message,
+      //   })
+      // });
+    });
   }
 
 
-    render() {
-      return (
-      
+  render() {
+    return (
+      <div>
+        {this.state.alert &&
 
-        <div>
+          <div class="alert alert-warning" role="alert">
+            {this.state.error} ,Please type the city
+          </div>
+        }
+        <Form onSubmit={this.getcityInformation}>
 
+          <Form.Group className="mb-3" controlId="formBasicEmail">
 
-          <Form onSubmit={this.getCityInformation}>
-
-            <Form.Group className="mb-3" controlId="formBasicEmail">
-
-              <Form.Label>City Name</Form.Label>
-              <br></br>
-              <input onChange={this.changeCityExplorer} type="text" />
-
-            </Form.Group>
-
-            <Button variant="primary" type="submit">Explorer</Button>
+            <Form.Label class='formClass'>City Name</Form.Label>
             <br></br>
-
-            <p>{this.state.cityInformation.display_name}</p>
-            <p>{this.state.cityInformation.lat}</p>
-            <p>{this.state.cityInformation.lon}</p>
-
             <br></br>
+            <input onChange={this.changecityExplorer} type="text" />
 
-            {this.state.displayInformation &&
+          </Form.Group>
+          <br></br>
+          <br></br>
 
-              <img src={`https://maps.locationiq.com/v3/staticmap?key=pk.7c29bd71f87227f27ebcd9f2dbd2a2db&q&center=${this.state.cityInformation.lat},${this.state.cityInformation.lon}&zoom = 15`} alt='' />
-            }
-                {this.state.error &&
-                <p>error</p>}
-                {this.state.show &&
-                
-                    this.state.weatherData.map((value, index) => (
-                       <div key={index}>
-                             <p>discription:{value.description}</p>
+          <Button class='buttonClass' variant="primary" type="submit"> Explore! </Button>
 
-                             <p> Date:{value.date} </p>
-                           
-                            
+        </Form>
+        <p class='amman'>{this.state.cityInformation.display_name}</p>
+        <p> latitude : {this.state.cityInformation.lat}</p>
+        <p>longitude : {this.state.cityInformation.lon}</p>
 
-                            
-                            </div>
-                    ))
-                }
-                
-                
-          </Form>
+        {this.state.displayInformation &&
+          <img src={`https://maps.locationiq.com/v3/staticmap?key=pk.bd985e4e701a5b53341ec9e721b6098a&q&center=${this.state.cityInformation.lat},${this.state.cityInformation.lon}&zoom=10`} alt='' />
+        }
 
-        </div>
+        {this.state.show &&
+          this.state.weatherData.map(value => {
+            return (
+              <>
+                <p>
+                  {value.description}
+                </p>
 
-      )
-    }
+                <p>
+                  {value.date}
+                </p>
+              </>
+            )
+          })
+        }
+        {this.state.showmovies &&
+          this.state.movies.map(val => {
+            return (
+              <>
+                <p> {val.title} </p>
+                <br></br>
+                <p> {val.overview} </p>
+                <br></br>
+                <>
+                <img variant="top" src={val.image_url}/>
+                </>
+                <br></br>
+                <p>  {val.released_on} </p>
+                <br></br>
+                <p> {val.popularity} </p>
+                <br></br>
+                <p> {val.average_votes} </p>
+                <br></br>
+                <p> {val.total_votes} </p>
+
+              </>
+            )
+          })
+
+        }
+
+      </div>
+
+    )
   }
+}
 
-  export default Main;
+
+export default Main;
